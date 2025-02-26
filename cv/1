@@ -1,0 +1,35 @@
+Компьютерие зрения (ШАД)
+
+* камера обскура
+* цифровая камера (световувств. пленка = цифра. матрица, оптическая система - мб не одна линза, а сложная система из линз)
+
+* Image sensor CCD vs cMos → spatial & value discretization
+
+
+What is color? RGB LMS XYZ CMYK YIQ HSV - color models
+
+- длина волны
+
+- Color is a psychophysiological property of our vision that occurs when observing objects & light, 
+and not the physical propocties of objects & light.
+
+- Light perseption is studed by photometry & colorimetry 
+
+Visible light is electromagnetic radiation in and [380, 780] nm. 
+It isnt blocked by earths atmosphere
+
+инфракрасный свет? ультрафиолет?
+
+Any light source may be descried by specrum:
+the amount of energy emitted per unit of time for each wavelength.
+
+
+полтора века назад
+
+• Trichromatic color theory
+Choose 3 primary colors P1, P2, P3. Other colors are deseribed as liners combinations of primary colors. 3 weignts are 3 'coordinates' of color.
+Trichromatic theory states that all visible colors may be obtained as combination of 3 primary colors, it was studied in color matching experiments.
+
+• Grarsmann's laws (1853)
+
+# selective attention test
