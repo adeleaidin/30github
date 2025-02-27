@@ -1,0 +1,59 @@
+Outline
+1. What is image processing?
+2. Tonal correction
+3. Color correction
+4. Noise reduction, convolution operation
+5. Fast filtering
+6. Edge detection
+
+
+What is image processing?
+Tasks and methods where input and output are images (тензоры)
+Goals:
+I. Improve image for human perception
+2. Improve image for automatic recognition
+3. Extracting features for further analysis
+4. Conversion for technical needs
+5. Entertainment (special effects)
+
+
+Image histogram
+Image values don't fully use available luminance range or concentrate around certain values
+
+- Autocontrast
+Point operator: pixel output value is defined only by it's own value, i.e. all pixels are processed independently. Simplest case is linear correction:
+(x) = (x - Xmin)
+
+- Stable autocontrast
+To make autocontrast more stable to noise, drop 5% of min and max values to compute Xmin and xmax
+
+- How make contrast correction for color images?
+
+- Nonlinear contrast correction
+f(x) = c*x^T
+
+- Correcting with neutral card
+Take a photo of white or gray card under desired illumination
+Multiply RGB values by 1/r, 1/g, and 1/b
+What drawbacks does this method have?
+
+Gray world assumption: average per-channel value should be equal for all three channels,/Compute multipliers rw, gw, bw, that correct image according to this assumption
+
+
+- Noise
+Gaussian noise
+Data drop-out noise:
+• Salt-and-pepper: random black and white pixels
+• Impulse noise: random white pixels
+
+image averaging - ЦПТ
+
+
+Image convolution - операция свертывания 
+
+filters:
+fast box
+separbale
+gaussin filter with a box filter
+fast median
+
