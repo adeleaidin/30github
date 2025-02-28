@@ -1,0 +1,254 @@
+--drop table kdz_dds.airport;
+CREATE TABLE kdz_dds.airport (
+    airport_dk SERIAL PRIMARY KEY, -- Постоянный ключ аэропорта
+    airport_code varchar(10) NOT NULL, -- Код аэропорта (ICAO)
+    airport_name varchar(255) NOT NULL, -- Название аэропорта
+    city varchar(100) NOT NULL, -- Город
+    country varchar(100) NOT NULL, -- Страна
+    latitude float NULL, -- Широта
+    longitude float NULL, -- Долгота
+    loaded_ts timestamp DEFAULT now() -- Время загрузки
+);
+
+INSERT INTO kdz_dds.airport (
+    airport_code, airport_name, city, country, latitude, longitude, loaded_ts
+)
+SELECT 
+    icao_code AS airport_code,
+    name AS airport_name,
+    municipality AS city,
+    iso_country AS country,
+    latitude_deg AS latitude,
+    longitude_deg AS longitude,
+    NOW() AS loaded_ts
+FROM kdz_src.airport;
+
+
+
+
+
+DROP TABLE IF EXISTS kdz_dds.weather_type;
+CREATE TABLE kdz_dds.weather_type (
+    weather_combination_dk SERIAL PRIMARY KEY,  -- Уникальный идентификатор сочетания типов погоды
+    rain SMALLINT DEFAULT 0,                    -- Признак дождя (0 или 1)
+    snow SMALLINT DEFAULT 0,                    -- Признак снега (0 или 1)
+    thunderstorm SMALLINT DEFAULT 0,            -- Признак грозы (0 или 1)
+    drizzle SMALLINT DEFAULT 0,                 -- Признак мороси (0 или 1)
+    fog_mist SMALLINT DEFAULT 0                 -- Признак тумана/мисти (0 или 1)
+);
+INSERT INTO kdz_dds.weather_type (rain, snow, thunderstorm, drizzle, fog_mist)
+VALUES
+    (1, 0, 0, 0, 0),
+    (0, 1, 0, 0, 0),
+    (0, 0, 1, 0, 0),
+    (0, 0, 0, 1, 0),
+    (0, 0, 0, 0, 1),
+    (1, 1, 0, 0, 0),
+    (1, 0, 1, 0, 0),
+    (1, 0, 0, 1, 0),
+    (1, 0, 0, 0, 1),
+    (0, 1, 1, 0, 0),
+    (0, 1, 0, 1, 0),
+    (0, 1, 0, 0, 1),
+    (0, 0, 1, 1, 0),
+    (0, 0, 1, 0, 1),
+    (0, 0, 0, 1, 1),
+    (1, 1, 1, 0, 0),
+    (1, 1, 0, 1, 0),
+    (1, 1, 0, 0, 1),
+    (1, 0, 1, 1, 0),
+    (1, 0, 1, 0, 1),
+    (1, 0, 0, 1, 1),
+    (0, 1, 1, 1, 0),
+    (0, 1, 1, 0, 1),
+    (0, 1, 0, 1, 1),
+    (0, 0, 1, 1, 1),
+    (1, 1, 1, 1, 0),
+    (1, 1, 1, 0, 1),
+    (1, 1, 0, 1, 1),
+    (1, 0, 1, 1, 1),
+    (0, 1, 1, 1, 1),
+    (1, 1, 1, 1, 1),
+    (0, 0, 0, 0, 0);
+   
+   
+   
+   
+   
+   
+   
+--drop table kdz_dds.flights;
+CREATE TABLE kdz_dds.flights (
+    year int NULL,
+    quarter int NULL,
+    month int NULL,
+    flight_scheduled_date date NULL,
+    flight_actual_date date NULL,
+    flight_dep_scheduled_ts timestamp NOT NULL,
+    flight_dep_actual_ts timestamp NULL,
+    report_airline varchar(10) NOT NULL,
+    tail_number varchar(10) NOT NULL,
+    flight_number_reporting_airline varchar(15) NOT NULL,
+    origin_code varchar(5) NULL,
+    dest_code varchar(5) NULL,
+    dep_delay_minutes float NULL,
+    cancelled int NOT NULL,
+    cancellation_code char(1) NULL,
+    weather_delay float NULL,
+    air_time float NULL,
+    distance float NULL,
+    loaded_ts timestamp DEFAULT NOW(),
+    CONSTRAINT flights_pk PRIMARY KEY (flight_dep_scheduled_ts, flight_number_reporting_airline, origin_code, dest_code)
+);
+
+
+
+
+
+
+
+
+drop table if exists kdz_dds.airport_weather;
+CREATE TABLE kdz_dds.airport_weather (
+    airport_dk INT NOT NULL, -- Идентификатор аэропорта
+    weather_combination_dk INT NOT NULL, -- Идентификатор сочетания погодных условий
+    cold SMALLINT DEFAULT 0, -- Признак холодной температуры
+    rain SMALLINT DEFAULT 0, -- Признак дождя
+    snow SMALLINT DEFAULT 0, -- Признак снега
+    thunderstorm SMALLINT DEFAULT 0, -- Признак грозы
+    drizzle SMALLINT DEFAULT 0, -- Признак мороси
+    fog_mist SMALLINT DEFAULT 0, -- Признак тумана/мисти
+    t INT, -- Температура
+    max_gws INT, -- Максимальная скорость ветра
+    w_speed INT, -- Скорость ветра
+    date_start TIMESTAMP NOT NULL, -- Начало временного интервала
+    date_end TIMESTAMP NOT NULL DEFAULT '3000-01-01'::timestamp, -- Окончание временного интервала (по умолчанию - far future)
+    loaded_ts TIMESTAMP DEFAULT now(), -- Время загрузки
+    PRIMARY KEY (airport_dk, date_start), -- Праймари ключ по аэропорту и дате начала интервала
+    FOREIGN KEY (airport_dk) REFERENCES kdz_dds.airport(airport_dk) ON DELETE CASCADE, -- Внешний ключ на таблицу аэропортов
+    FOREIGN KEY (weather_combination_dk) REFERENCES kdz_dds.weather_type(weather_combination_dk) ON DELETE CASCADE -- Внешний ключ на таблицу погодных сочетаний
+);
+
+
+
+
+
+
+
+
+
+INSERT INTO kdz_dds.flights (
+    year,  quarter,  month, 
+    flight_scheduled_date,  flight_actual_date, 
+    flight_dep_scheduled_ts,  flight_dep_actual_ts, 
+    report_airline,  tail_number,  flight_number_reporting_airline, 
+    origin_code,  dest_code, 
+    dep_delay_minutes, cancelled,  cancellation_code, 
+    weather_delay, air_time, distance )
+SELECT DISTINCT 
+    st.year,
+    st.quarter,
+    st.month,
+    st.flight_date AS flight_scheduled_date,
+    CASE 
+        WHEN st.cancelled != 0 THEN NULL
+        ELSE DATE(st.flight_date::timestamp + st.crs_dep_time::time + COALESCE(st.dep_delay_minutes, 0) * INTERVAL '1 minute') 
+    END AS flight_actual_date,
+    st.flight_date::timestamp + st.crs_dep_time AS flight_dep_scheduled_ts,
+    CASE 
+        WHEN st.cancelled != 0 THEN NULL
+        ELSE st.flight_date::timestamp + st.crs_dep_time::time + COALESCE(st.dep_delay_minutes, 0) * INTERVAL '1 minute'
+    END AS flight_dep_actual_ts,
+    st.reporting_airline AS report_airline,
+    COALESCE(st.tail_number, '') AS tail_number,
+    st.flight_number AS flight_number_reporting_airline,
+    st.origin AS origin_code,
+    st.dest AS dest_code,
+    st.dep_delay_minutes, st.cancelled, st.cancellation_code,
+    st.weather_delay, st.air_time,
+    st.distance
+FROM kdz_stg.flights st
+ON CONFLICT (flight_dep_scheduled_ts, flight_number_reporting_airline, origin_code, dest_code) DO UPDATE
+SET 
+    dep_delay_minutes = EXCLUDED.dep_delay_minutes,
+    cancelled = EXCLUDED.cancelled,
+    cancellation_code = EXCLUDED.cancellation_code,
+    weather_delay = EXCLUDED.weather_delay,
+    air_time = EXCLUDED.air_time,
+    distance = EXCLUDED.distance,
+    loaded_ts = NOW();
+    
+   
+   
+   
+   
+   
+   
+   
+
+-- Создаем уникальный индекс на сочетания погодных признаков
+CREATE UNIQUE INDEX idx_weather_type_unique 
+ON kdz_dds.weather_type (rain, snow, thunderstorm, drizzle, fog_mist);
+
+
+
+truncate table kdz_dds.airport_weather;
+-- Вставляем данные в таблицу погоды для аэропортов
+INSERT INTO kdz_dds.airport_weather (
+    airport_dk,
+    weather_combination_dk,
+    cold,
+    rain,
+    snow,
+    thunderstorm,
+    drizzle,
+    fog_mist,
+    t,
+    max_gws,
+    w_speed,
+    date_start,
+    date_end
+)
+SELECT
+    a.airport_dk AS airport_id,
+    wt.weather_combination_dk,
+    CASE WHEN w.t_air_temperature < 0 THEN 1 ELSE 0 END AS cold,
+    wt.rain,
+    wt.snow,
+    wt.thunderstorm,
+    wt.drizzle,
+    wt.fog_mist,
+    w.t_air_temperature AS t,
+    w.ff10_max_gust_value AS max_gws,
+    w.ff_wind_speed AS w_speed,
+    w.local_datetime AS date_start,
+    COALESCE(
+        LEAD(w.local_datetime) OVER (PARTITION BY CASE WHEN w.icao_code NOT LIKE 'K%' THEN 'K' || w.icao_code ELSE w.icao_code END ORDER BY w.local_datetime),
+        '3000-01-01'::timestamp
+    ) AS date_end
+FROM
+    kdz_stg.weather w
+JOIN
+    kdz_dds.airport a ON CASE WHEN w.icao_code NOT LIKE 'K%' THEN 'K' || w.icao_code ELSE w.icao_code END = a.airport_code
+JOIN
+    kdz_dds.weather_type wt
+    ON wt.rain = CASE WHEN LOWER(w.ww_present) LIKE '%rain%' OR LOWER(w.ww_recent) LIKE '%rain%' THEN 1 ELSE 0 END
+    AND wt.snow = CASE WHEN LOWER(w.ww_present) LIKE '%snow%' OR LOWER(w.ww_recent) LIKE '%snow%' THEN 1 ELSE 0 END
+    AND wt.thunderstorm = CASE WHEN LOWER(w.ww_present) LIKE '%thunderstorm%' OR LOWER(w.ww_recent) LIKE '%thunderstorm%' THEN 1 ELSE 0 END
+    AND wt.drizzle = CASE WHEN LOWER(w.ww_present) LIKE '%drizzle%' OR LOWER(w.ww_recent) LIKE '%drizzle%' THEN 1 ELSE 0 END
+    AND wt.fog_mist = CASE WHEN LOWER(w.ww_present) LIKE '%fog%' OR LOWER(w.ww_present) LIKE '%mist%' OR LOWER(w.ww_recent) LIKE '%haze%' THEN 1 ELSE 0 END
+ON CONFLICT (airport_dk, date_start)
+DO UPDATE
+SET
+    weather_combination_dk = EXCLUDED.weather_combination_dk,
+    cold = EXCLUDED.cold,
+    rain = EXCLUDED.rain,
+    snow = EXCLUDED.snow,
+    thunderstorm = EXCLUDED.thunderstorm,
+    drizzle = EXCLUDED.drizzle,
+    fog_mist = EXCLUDED.fog_mist,
+    t = EXCLUDED.t,
+    max_gws = EXCLUDED.max_gws,
+    w_speed = EXCLUDED.w_speed,
+    date_end = EXCLUDED.date_end,
+    loaded_ts = NOW();
