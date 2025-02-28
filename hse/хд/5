@@ -1,0 +1,133 @@
+CREATE SCHEMA kdz_mart_35;
+-- Создание таблицы kdz_mart_35.fact_departure_35
+DROP TABLE IF EXISTS kdz_mart_35.fact_departure_35;
+CREATE TABLE kdz_mart_35.fact_departure_35 AS
+SELECT
+    f.year, f.quarter, f.month, f.flight_date AS flight_scheduled_date, NULL AS flight_actual_date,
+    -- Преобразуем crs_dep_time в timestamp, добавив flight_date (будет временная метка)
+    f.flight_date + f.crs_dep_time::interval AS flight_dep_scheduled_ts,
+    -- Преобразуем dep_time в timestamp аналогично
+    f.flight_date + f.dep_time::interval AS flight_dep_actual_ts,
+    f.reporting_airline AS report_airline, f.tail_number, f.flight_number,
+    CASE WHEN f.origin NOT LIKE 'K%' THEN 'K' || f.origin ELSE f.origin END AS origin_code,
+    CASE WHEN f.dest NOT LIKE 'K%' THEN 'K' || f.dest ELSE f.dest END AS dest_code,
+    f.cancelled, f.cancellation_code, f.weather_delay, f.air_time, f.distance,
+    w.cold AS weather_cold, w.rain AS weather_rain, w.snow AS weather_snow, w.thunderstorm AS weather_thunderstorm,
+    w.drizzle AS weather_drizzle, w.fog_mist AS weather_fog_mist, w.t AS weather_temperature,
+    w.max_gws AS weather_max_gust_speed, w.w_speed AS weather_wind_speed
+FROM kdz_stg.flights f
+LEFT JOIN kdz_dds.airport_weather w
+    ON CASE WHEN f.origin NOT LIKE 'K%' THEN 'K' || f.origin ELSE f.origin END = (
+        SELECT airport_code FROM kdz_dds.airport WHERE airport_dk = w.airport_dk
+    )
+    -- Преобразуем crs_dep_time и date_start/date_end в timestamp, чтобы выполнить сравнение
+    AND (f.flight_date + f.crs_dep_time::interval) BETWEEN w.date_start AND w.date_end;
+
+   
+ -- Загрузка данных в таблицу fact_departure_35
+INSERT INTO kdz_mart_35.fact_departure_35
+SELECT
+    f.year, f.quarter, f.month, f.flight_date AS flight_scheduled_date, NULL AS flight_actual_date,
+    f.flight_date + f.crs_dep_time::interval AS flight_dep_scheduled_ts,
+    f.flight_date + f.dep_time::interval AS flight_dep_actual_ts,
+    f.reporting_airline AS report_airline, f.tail_number, f.flight_number,
+    CASE WHEN f.origin NOT LIKE 'K%' THEN 'K' || f.origin ELSE f.origin END AS origin_code,
+    CASE WHEN f.dest NOT LIKE 'K%' THEN 'K' || f.dest ELSE f.dest END AS dest_code,
+    f.cancelled, f.cancellation_code, f.weather_delay, f.air_time, f.distance,
+    w.cold AS weather_cold, w.rain AS weather_rain, w.snow AS weather_snow,
+    w.thunderstorm AS weather_thunderstorm, w.drizzle AS weather_drizzle,
+    w.fog_mist AS weather_fog_mist, w.t AS weather_temperature, w.max_gws AS weather_max_gust_speed,
+    w.w_speed AS weather_wind_speed
+FROM kdz_stg.flights f
+LEFT JOIN kdz_dds.airport_weather w
+    ON CASE WHEN f.origin NOT LIKE 'K%' THEN 'K' || f.origin ELSE f.origin END = (
+        SELECT airport_code FROM kdz_dds.airport WHERE airport_dk = w.airport_dk
+    )
+    AND (f.flight_date + f.crs_dep_time::interval) BETWEEN w.date_start AND w.date_end;
+   
+   
+   
+   
+DROP TABLE IF EXISTS kdz_mart_35.airport_performance_35;
+
+CREATE TABLE IF NOT EXISTS kdz_mart_35.airport_performance_35 AS
+SELECT
+    origin_code AS airport_code,
+    COUNT(*) AS total_flights,
+    AVG(weather_delay) AS avg_weather_delay, -- Средняя задержка по погоде
+    SUM(CASE WHEN cancelled = 1 THEN 1 ELSE 0 END) AS total_cancellations
+FROM kdz_mart_35.fact_departure_35
+GROUP BY origin_code;
+
+
+DROP TABLE IF EXISTS kdz_mart_35.weather_impact_35;
+
+CREATE TABLE IF NOT EXISTS kdz_mart_35.weather_impact_35 AS
+SELECT
+    weather_condition,
+    COUNT(*) AS affected_flights,
+    AVG(weather_delay) AS avg_weather_delay, -- Средняя задержка по погоде
+    SUM(CASE WHEN cancelled = 1 THEN 1 ELSE 0 END) AS cancellations
+FROM (
+    SELECT
+        UNNEST(ARRAY[
+            CASE WHEN weather_cold = 1 THEN 'cold' ELSE NULL END,
+            CASE WHEN weather_rain = 1 THEN 'rain' ELSE NULL END,
+            CASE WHEN weather_snow = 1 THEN 'snow' ELSE NULL END,
+            CASE WHEN weather_thunderstorm = 1 THEN 'thunderstorm' ELSE NULL END,
+            CASE WHEN weather_drizzle = 1 THEN 'drizzle' ELSE NULL END,
+            CASE WHEN weather_fog_mist = 1 THEN 'fog_mist' ELSE NULL END
+        ]) AS weather_condition,
+        weather_delay,
+        cancelled
+    FROM kdz_mart_35.fact_departure_35
+) sub
+WHERE weather_condition IS NOT NULL
+GROUP BY weather_condition;
+
+
+
+
+
+
+
+
+DROP TABLE IF EXISTS kdz_mart_35.route_performance_35;
+
+CREATE TABLE IF NOT EXISTS kdz_mart_35.route_performance_35 AS
+SELECT
+    origin_code,
+    dest_code,
+    COUNT(*) AS total_flights,
+    AVG(weather_delay) AS avg_weather_delay, -- Средняя задержка по погоде
+    SUM(CASE WHEN cancelled = 1 THEN 1 ELSE 0 END) AS total_cancellations
+FROM kdz_mart_35.fact_departure_35
+GROUP BY origin_code, dest_code;
+
+
+DROP TABLE IF EXISTS kdz_mart_35.seasonal_trends_35;
+
+CREATE TABLE IF NOT EXISTS kdz_mart_35.seasonal_trends_35 AS
+SELECT
+    EXTRACT(MONTH FROM flight_scheduled_date) AS month,
+    EXTRACT(QUARTER FROM flight_scheduled_date) AS quarter,
+    COUNT(*) AS total_flights,
+    AVG(weather_delay) AS avg_weather_delay, -- Средняя задержка по погоде
+    SUM(CASE WHEN cancelled = 1 THEN 1 ELSE 0 END) AS total_cancellations
+FROM kdz_mart_35.fact_departure_35
+GROUP BY EXTRACT(MONTH FROM flight_scheduled_date), EXTRACT(QUARTER FROM flight_scheduled_date);
+
+
+
+
+
+DROP TABLE IF EXISTS kdz_mart_35.airline_performance_35;
+
+CREATE TABLE IF NOT EXISTS kdz_mart_35.airline_performance_35 AS
+SELECT
+    report_airline AS airline,
+    COUNT(*) AS total_flights,
+    AVG(weather_delay) AS avg_weather_delay, -- Средняя задержка по погоде
+    SUM(CASE WHEN cancelled = 1 THEN 1 ELSE 0 END) AS total_cancellations
+FROM kdz_mart_35.fact_departure_35
+GROUP BY report_airline;
