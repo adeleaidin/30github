@@ -1,0 +1,61 @@
+
+create table if not exists kdz_src.flights(
+	year int not null,
+	quarter int NULL,
+	month int NOT NULL,
+	fl_date varchar(50) NOT NULL,
+	op_unique_carrier varchar(10) NULL,
+	tail_num varchar(10) NULL,
+	op_carrier_fl_num varchar(15) NOT NULL,
+	origin varchar(10) NULL,
+	dest varchar(10) NULL,
+	crs_dep_time varchar(10) NOT NULL,
+	dep_time varchar(10) NULL,
+	dep_delay_minutes float NULL,
+	cancelled float NOT NULL,
+	cancellation_code char(1) NULL,
+	air_time float NULL,
+	distance float NULL,
+	weather_delay float NULL,
+	loaded_ts timestamp default(now())
+);
+
+
+
+CREATE table if not exists kdz_src.weather (
+	icao_code varchar(10) NOT NULL DEFAULT 'SEA'::character varying,
+	local_datetime varchar(25) NOT NULL,
+	t_air_temperature varchar(10) NULL,
+	p0_sea_lvl varchar(10) NULL,
+	p_station_lvl varchar(10) NULL,
+	u_humidity varchar(10) NULL,
+	dd_wind_direction varchar(100) NULL,
+	ff_wind_speed varchar(10) NULL,
+	ff10_max_gust_value varchar(10) NULL,
+	ww_present varchar(100) NULL,
+	ww_recent varchar(50) NULL,
+	c_total_clouds varchar(200) NULL,
+	vv_horizontal_visibility varchar(10) NULL,
+	td_temperature_dewpoint varchar(10) NULL,
+	loaded_ts timestamp NOT NULL DEFAULT now()
+);
+
+
+
+CREATE table if not exists kdz_src.airport (
+    id int not null,
+    icao_code VARCHAR(10) not null,
+    type VARCHAR(50) not null,
+    name VARCHAR(100) not null,
+    latitude_deg float not null,
+    longitude_deg float,
+    elevation_ft int null,
+    continent VARCHAR(5) not null,
+    iso_country VARCHAR(5) not null,
+    iso_region VARCHAR(10) not null,
+    municipality VARCHAR(50) not null,
+    scheduled_service VARCHAR(10) not null,
+    gps_code VARCHAR(10) null,
+    iata_code VARCHAR(50) null,
+    local_code VARCHAR(50) null
+);
