@@ -1,0 +1,182 @@
+CREATE TABLE if not exists kdz_stg.flights(
+	year int NOT NULL,
+	quarter int NULL,
+	month int NOT NULL,
+	flight_date date NOT NULL,
+	reporting_airline varchar(10) NULL,
+	tail_number varchar(10) NULL,
+	flight_number varchar(15) NOT NULL,
+	origin varchar(10) NULL,
+	dest varchar(10) NULL,
+	crs_dep_time time NOT NULL,
+	dep_time time NULL,
+	dep_delay_minutes float NULL,
+	cancelled int NOT NULL,
+	cancellation_code char(1) NULL,
+	air_time float NULL,
+	distance float NULL,
+	weather_delay float NULL,
+	loaded_ts timestamp default(now()),
+	CONSTRAINT flights_pkey PRIMARY KEY (flight_date, flight_number, origin, dest, crs_dep_time)
+);
+
+
+CREATE TABLE if not exists kdz_stg.weather (
+	icao_code varchar(10) NOT NULL,
+	local_datetime timestamp NOT NULL,
+	t_air_temperature numeric(3, 1) NULL,
+	p0_sea_lvl numeric(4, 1) NULL,
+	p_station_lvl numeric(4, 1) NOT NULL,
+	u_humidity int4 NULL,
+	dd_wind_direction varchar(100) NULL,
+	ff_wind_speed int4 NULL,
+	ff10_max_gust_value int4 NULL,
+	ww_present varchar(100) NULL,
+	ww_recent varchar(50) NULL,
+	c_total_clouds varchar(200) NOT NULL,
+	vv_horizontal_visibility numeric(3, 1) NULL,
+	td_temperature_dewpoint numeric(3, 1) NULL,
+	loaded_ts timestamp NOT NULL DEFAULT now(),
+	PRIMARY KEY (icao_code, local_datetime)
+); 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+DROP TABLE IF EXISTS kdz_etl.weather;
+CREATE TABLE kdz_etl.weather AS
+SELECT DISTINCT
+    icao_code,
+    TO_TIMESTAMP(local_datetime, 'DD.MM.YYYY HH24:MI') AS local_datetime,
+    CASE
+        WHEN t_air_temperature = '' OR NOT t_air_temperature ~ '^\d+(\.\d+)?$'
+        THEN NULL
+        ELSE t_air_temperature::DECIMAL(5, 2)
+    END AS t_air_temperature,
+    CASE
+        WHEN p0_sea_lvl = '' OR NOT p0_sea_lvl ~ '^\d+(\.\d+)?$'
+        THEN NULL
+        ELSE p0_sea_lvl::DECIMAL(6, 2)
+    END AS p0_sea_lvl,
+    CASE
+        WHEN NOT p_station_lvl ~ '^\d+(\.\d+)?$'
+        THEN NULL
+        ELSE p_station_lvl::DECIMAL(6, 2)
+    END AS p_station_lvl,
+    CASE
+        WHEN u_humidity = '' OR NOT u_humidity ~ '^\d+$'
+        THEN NULL
+        ELSE u_humidity::INTEGER
+    END AS u_humidity,
+    dd_wind_direction,  -- Оставляем как есть, без преобразования
+    CASE
+        WHEN ff_wind_speed = '' OR NOT ff_wind_speed ~ '^\d+$'
+        THEN NULL
+        ELSE ff_wind_speed::INTEGER
+    END AS ff_wind_speed,
+    CASE
+        WHEN ff10_max_gust_value = '' OR NOT ff10_max_gust_value ~ '^\d+$'
+        THEN NULL
+        ELSE ff10_max_gust_value::INTEGER
+    END AS ff10_max_gust_value,
+    ww_present,
+    ww_recent,
+    c_total_clouds,
+    CASE
+        WHEN vv_horizontal_visibility = '' OR NOT vv_horizontal_visibility ~ '^\d+(\.\d+)?$'
+        THEN NULL
+        ELSE vv_horizontal_visibility::DECIMAL(5, 2)
+    END AS vv_horizontal_visibility,
+    CASE
+        WHEN td_temperature_dewpoint = '' OR NOT td_temperature_dewpoint ~ '^\d+(\.\d+)?$'
+        THEN NULL
+        ELSE td_temperature_dewpoint::DECIMAL(5, 2)
+    END AS td_temperature_dewpoint
+FROM kdz_src.weather;
+
+
+
+
+
+truncate table kdz_stg.weather;
+INSERT INTO kdz_stg.weather(
+    icao_code, local_datetime, t_air_temperature, p0_sea_lvl, p_station_lvl, 
+    u_humidity, dd_wind_direction, ff_wind_speed, ff10_max_gust_value, ww_present,
+    ww_recent, c_total_clouds, vv_horizontal_visibility, td_temperature_dewpoint
+)
+SELECT 
+    icao_code, local_datetime,   t_air_temperature, p0_sea_lvl, p_station_lvl,     u_humidity,
+    dd_wind_direction, ff_wind_speed, ff10_max_gust_value, ww_present, ww_recent, c_total_clouds,
+    vv_horizontal_visibility, td_temperature_dewpoint
+FROM kdz_etl.weather
+ON CONFLICT (icao_code, local_datetime) DO UPDATE
+SET 
+    t_air_temperature = EXCLUDED.t_air_temperature, p0_sea_lvl = EXCLUDED.p0_sea_lvl, p_station_lvl = EXCLUDED.p_station_lvl,  
+    u_humidity = EXCLUDED.u_humidity, dd_wind_direction = EXCLUDED.dd_wind_direction,
+    ff_wind_speed = EXCLUDED.ff_wind_speed, ff10_max_gust_value = EXCLUDED.ff10_max_gust_value,
+    ww_present = EXCLUDED.ww_present, ww_recent = EXCLUDED.ww_recent,
+    c_total_clouds = EXCLUDED.c_total_clouds, vv_horizontal_visibility = EXCLUDED.vv_horizontal_visibility,
+    td_temperature_dewpoint = EXCLUDED.td_temperature_dewpoint, loaded_ts = NOW();
+    
+   
+   
+   
+   
+   
+   
+ 
+   
+   
+   
+   
+   
+CREATE TABLE IF not exists kdz_etl.flights AS 
+SELECT DISTINCT 
+    year, quarter, month,
+    TO_DATE(fl_date, 'MM.DD.YYYY') AS fl_date,
+    op_unique_carrier AS reporting_airline,
+    tail_num, op_carrier_fl_num AS flight_number,
+    origin, dest,
+    CASE 
+        WHEN crs_dep_time = '' THEN NULL 
+        ELSE CAST(crs_dep_time AS TIME) 
+    END AS crs_dep_time,
+    CASE 
+        WHEN dep_time = '' THEN NULL 
+        ELSE CAST(dep_time AS TIME) 
+    END AS dep_time,
+    dep_delay_minutes,  cancelled, cancellation_code, air_time, distance, weather_delay
+FROM kdz_src.flights;
+
+
+insert into kdz_stg.flights( year, quarter, month, flight_date, reporting_airline, tail_number, flight_number,origin,dest, crs_dep_time,dep_time, dep_delay_minutes, cancelled , cancellation_code, air_time, distance, weather_delay)
+select 
+	year, quarter, month,fl_date, reporting_airline, tail_num, flight_number, origin, dest, crs_dep_time, dep_time,
+	dep_delay_minutes, cancelled , cancellation_code, air_time, distance, weather_delay
+from kdz_etl.flights
+on conflict(flight_date, flight_number, origin, dest, crs_dep_time) do update
+set year = excluded.year, 
+  quarter = excluded.quarter, 
+  month = excluded.month,
+  reporting_airline = excluded.reporting_airline,
+  tail_number = excluded.tail_number,
+  dep_time = excluded.dep_time,
+  dep_delay_minutes = excluded.dep_delay_minutes,
+  cancelled = excluded.cancelled  ,
+  cancellation_code = excluded.cancellation_code,
+  air_time = excluded.air_time,
+  distance = excluded.distance,
+  weather_delay = excluded.weather_delay,
+  loaded_ts = now()
+;
