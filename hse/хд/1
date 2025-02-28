@@ -1,0 +1,7 @@
+create schema kdz_src;
+
+create schema kdz_etl;
+
+create schema kdz_stg;
+
+create schema kdz_dds;
