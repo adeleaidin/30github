@@ -1,1 +1,76 @@
 Сжатие изображений, преобразование Фурье
+
+1. Lossless compression with PNG
+2. Lossy compression with JPEG
+3. Image analysis using Fourier transform
+4. Image stitching with laplacian pyramid
+
+
+## 1. 
+Lossless compression with PNG
+PING is not GIF
+PNG — free alternative to GIF, proposed in 1995.
+I. Supports only lossless compression.
+2. RGBA, up to 16 bit per channel, supports palletes.
+3. Simple cross-platform implementation.
+
+Delta-coding
+Coding methods:
+0 Byte X is passed unaltered
+1 Code X - A
+2 Code X - B
+3 Code X - |(A+B)/2|
+4 Code X - F, F € {A, B, C},
+nearest to p = A + B - C
+Coding method is chosen per line
+Obtained sequence of numbers is compressed using DEFLATE algorithm (used in ZIP)
+
+Image traversal (Adam7)
+PNG can optionally use traversal in 7 steps for partial transmission of an image
+
+
+## 2.
+Contrast Sensitivity Function
+Human perceive luminance and color with different resolutions. To make use of this fact, image transmission systems encode separate luminance component
+
+Люди больше чувствительны к яркости, чем к цвету
+
+Photopic luminosity function
+*зеленый цвет - !!
+
+- RGB→ YC(b)C(r)
+Y = 0.299R + 0.587G + 0.114B 
+C(b) = -0.169R - 0.331G + 0.500B + 128
+C(r) = 0.500R - 0.419G - 0.081B + 128
+
+- Shift to 128
+
+- Discrete cosine transform
+чем больше частота по модулю, тем меньше амплитуда
+
+luminance quantization matrix
+color quantization matrix
+Quantization matrix depends on quality factor @ (from | to 100) set by user. Quantization matrices are constructed using:
+1. Amplitude statistics of real images.
+2. Model for human visual system.
+
+- Zigzag scanning
+Sequence of numbers is compressed using Zero Run-Length Encoding and common compression method (Huffman or arithmetic coding)
+
+
+JPEG algorithm
+1. Convert image in color space YC(b)C(r)
+2. Downsample color components.
+3. Divide image into blocks of size 8 x 8 pixels, subtract 128.
+4. For every block:
+4. 1 Apply discrete cosine transform.
+4.2 Quantize coefficients (amplitudes).
+4.3 Compress quantized coefficients.
+Algorithm specificity:
+I. Designed for compressing images that are shown on a screen.
+2. Images are compressed due to loss of high-frequency information.
+
+
+## 3.
+
+
