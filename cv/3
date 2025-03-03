@@ -72,5 +72,37 @@ I. Designed for compressing images that are shown on a screen.
 
 
 ## 3.
+прямое и обратное преобразование Фурье
+
+если у нас сигнал произвольный 
+то спектр у него тоже будет какой-то произвольной формы 
+
+если у нас непрерывный сигнал и периодический то тогда при выполнении некоторых условий на непрерывность
+мы можем разложить эту функцию в ряд фурье то есть спектр у нас будет дискретный 
+
+Следующая история если у нас сигнал дискретный то тогда у него будет периодический спектр 
+
+и если Мы совместим вот эти два варианта То есть если у нас сигнал периодический и сигнал дискретный 
+тогда у этого сигнала будет периодический спектр и дискрет спетр одновременно
+
+-spatial domain
+-frequency domain
 
 
+## 4.
+гауссовская пирамида
+->
+лапласовская пирамида
+
+гаусиное преобразование / преобр фурье
+
+берем маску и строим гаусовскую пирамиду
+далее берем лаплас пирамиду и смешиваем с высокочаст маской
+итд
+
+## Conclusion
+We reviewed following topics:
+• PNG lossless image compression. It uses simple delta coding and DEFLATE compression for RGBA pixel values
+• JPEG lossy image compression. It is based on discrete cosine transform, quantization and compression of amplitudes
+• Fourier transform — a useful tool for analysis of images and linear filters
+• image stitching via laplacian pyramid. We may justify its' applicability using Fourier analysis
