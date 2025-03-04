@@ -1,0 +1,40 @@
+Классификация изображений и интро в нейронные сети
+
+Outline
+1. Image classification task and datasets
+2. Linear classification and MLPs
+3. Convolutional neural networks
+4. Milestone: AlexNet
+
+CIFAR- 10 and CIFAR-100
+Subset of the Tinylmages collection
+60000 images total
+CIFAR- 10: 10 classes
+• 5000 training images per class
+• 1000 testing images per class
+CIFAR- 100: 100 classes
+• 500 training images per class
+• 100 testing images per class
+
+ImageNet
+Goal: create a dataset with at least 1000 images for each of the original
+117000 synsets/classes
+~ 14 000 000 images
+(~| 000 000 images with bounding box annotations)
+~22 000 non-empty classes, (~ 10 000 classes with at least 1000 examples)
+
+
+Нейроны
+входы и выходы - наблюдаемые слои
+промежуточные - ненаблюдаемые
+
+backpropagation
+ошибка по активации
+
+rowley face detector
+
+- функции тензоры
+
+3.
+Hubel and Wiesel visual cortex experiments
+
