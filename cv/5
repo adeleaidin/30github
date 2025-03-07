@@ -1,0 +1,15 @@
+CNN backbones
+
+Outline
+I. CNN features and finetuning
+2. AlexNet, VGG, Inception
+3. ResNet and its' improvements
+4. Mobile architectures
+5. How good is ImageNet?
+
+How can we analyze a neural network?
+We can visualize:
+• trained weights
+• max activations of a particular neuron
+• projection of a high-dimensional features space
+
